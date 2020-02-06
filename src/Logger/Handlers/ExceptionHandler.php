@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Shays\Handlers;
+namespace Shays\Logger\Handlers;
 
-use Shays\Contracts\LoggerContract;
+use Shays\Logger\Contracts\LoggerContract;
 use Shays\Logger\LogLevel;
 use Throwable;
 
@@ -26,7 +26,7 @@ class ExceptionHandler
 	 */
 	public function handleException(Throwable $e): void
 	{
-		$this->logger->createLog(
+		$this->logger->log(
 			LogLevel::ERROR,
 			'Uncaught exception: ' . $e->getMessage(),
 			[

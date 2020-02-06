@@ -6,22 +6,23 @@ namespace Shays;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use Shays\Contracts\LoggerContract;
-use Shays\Exceptions\FormatException;
-use Shays\Exceptions\HandlerException;
-use Shays\Exceptions\LogLevelException;
-use Shays\Exceptions\StreamException;
-use Shays\Formatters\Format;
-use Shays\Handlers\ErrorHandler;
-use Shays\Handlers\ExceptionHandler;
-use Shays\Handlers\LogHandlerInterface;
+use Shays\Logger\Contracts\LoggerContract;
+use Shays\Logger\Exceptions\FormatException;
+use Shays\Logger\Exceptions\HandlerException;
+use Shays\Logger\Exceptions\InvalidDynamicInvocationException;
+use Shays\Logger\Exceptions\LogLevelException;
+use Shays\Logger\Exceptions\StreamException;
+use Shays\Logger\Formatters\Format;
+use Shays\Logger\Handlers\ErrorHandler;
+use Shays\Logger\Handlers\ExceptionHandler;
+use Shays\Logger\Handlers\LogHandlerInterface;
 use Shays\Logger\Log;
 use Shays\Logger\LogInterface;
 use Shays\Logger\LogLevel;
-use Shays\Serializer\Serializer;
-use Shays\Serializer\SerializerInterface;
-use Shays\Transformers\ContextExceptionTransformer;
-use Shays\Stream\StreamInterface;
+use Shays\Logger\Serializer\Serializer;
+use Shays\Logger\Serializer\SerializerInterface;
+use Shays\Logger\Transformers\ContextExceptionTransformer;
+use Shays\Logger\Stream\StreamInterface;
 
 class Logger implements LoggerContract
 {
@@ -66,23 +67,6 @@ class Logger implements LoggerContract
 		// Todo set a condition for these handlers
 		new ExceptionHandler($this);
 		new ErrorHandler($this);
-	}
-
-	/**
-	 * Sets the logger format handler
-	 *
-	 * @param string $format
-	 * @return LoggerContract
-	 * @throws FormatException
-	 */
-	public function setFormat(string $format): LoggerContract
-	{
-		// TODO add additional formats and serializers
-		if (! in_array(strtolower($format), Format::getSupportedFormats(), true)) {
-			throw new FormatException("Format {$format} is not supported");
-		}
-
-		return $this;
 	}
 
 	/**
@@ -135,9 +119,9 @@ class Logger implements LoggerContract
 	 */
 	public function addStream(StreamInterface $fileStream): LoggerContract
 	{
-		 if (array_key_exists(get_class($fileStream), $this->streams)) {
-		     throw new StreamException('Stream ' . get_class($fileStream) . ' already exists');
-		 }
+		if (array_key_exists(get_class($fileStream), $this->streams)) {
+			throw new StreamException('Stream ' . get_class($fileStream) . ' already exists');
+		}
 
 		$this->streams[get_class($fileStream)] = $fileStream;
 
@@ -162,7 +146,7 @@ class Logger implements LoggerContract
 	 *
 	 * @return mixed[]
 	 */
-	protected function getLogLevels(): array
+	public function getLogLevels(): array
 	{
 		return LogLevel::getLogLevels();
 	}
@@ -179,11 +163,30 @@ class Logger implements LoggerContract
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Add a dynamic log level which could be called dynamically with the __call magic method.
+	 *
+	 * @param int $value Log level value
+	 * @param string $levelName Log level name
+	 * @return LoggerContract
 	 */
-	public function createLog(int $level, string $message, array $context = []): void
+	public function addLogLevel(int $value, string $levelName): LoggerContract
 	{
-		if (! in_array($level, $this->getLogLevels(), true)) {
+		LogLevel::addLevel($value, $levelName);
+
+		return $this;
+	}
+
+	/**
+	 * Create and handle a log entry with the given data, which
+	 * would be then passed to all defined log handlers/steamers
+	 *
+	 * @param int $level The log entry level (@see LogLevel)
+	 * @param string $message The log message
+	 * @param array $context Additional log related information
+	 */
+	private function createLog(int $level, string $message, array $context = []): void
+	{
+		if (! in_array($level, array_keys(LogLevel::getLogLevels()), true)) {
 			throw new LogLevelException("Invalid log level: $level");
 		}
 
@@ -242,6 +245,35 @@ class Logger implements LoggerContract
 	public function getLogs(): array
 	{
 		return $this->logs;
+	}
+
+	/**
+	 * Allows dynamic log level invocation
+	 *
+	 * by adding a custom log level, it is done possible to use
+	 * the logger to directly call that level and it would still
+	 * be handled by all handlers and streamers.
+	 *
+	 * @see self::addLogLevel
+	 * @param $name
+	 * @param $args
+	 */
+	public function __call($name, $args)
+	{
+		// Can we log a dynamic level?
+		if (LogLevel::hasLevelName($name)) {
+			[$message, $context] = $args;
+			// Check if we get a message
+			if (gettype($message) === 'string' && strlen($message) > 0) {
+				// Let's handle the log!
+				$this->createLog(LogLevel::getLevelByName($name), $message, $context ?? []);
+			}
+
+			return;
+		}
+
+		throw new InvalidDynamicInvocationException('No log level found. Please make sure you have added'
+			. 'the log level before calling it (refer to the README.md for examples)');
 	}
 
 	/**

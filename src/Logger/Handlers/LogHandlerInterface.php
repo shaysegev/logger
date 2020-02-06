@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Shays\Handlers;
+namespace Shays\Logger\Handlers;
 
 use Shays\Logger\LogInterface;
 

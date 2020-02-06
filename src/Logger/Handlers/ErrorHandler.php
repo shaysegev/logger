@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Shays\Handlers;
+namespace Shays\Logger\Handlers;
 
-use Shays\Contracts\LoggerContract;
-use Shays\Transformers\ErrorCodeTransformer;
+use Shays\Logger\Contracts\LoggerContract;
+use Shays\Logger\Transformers\ErrorCodeTransformer;
 
 class ErrorHandler
 {
@@ -35,7 +35,7 @@ class ErrorHandler
 	): void {
 		$logLevel = ErrorCodeTransformer::transform($errorCode);
 
-		$this->logger->createLog(
+		$this->logger->log(
 			$logLevel,
 			$errorMessage,
 			[

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Shays\Serializer;
+namespace Shays\Logger\Serializer;
 
 use Shays\Logger\LogInterface;
 

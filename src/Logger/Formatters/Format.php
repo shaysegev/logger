@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Shays\Formatters;
+namespace Shays\Logger\Formatters;
 
 class Format
 {

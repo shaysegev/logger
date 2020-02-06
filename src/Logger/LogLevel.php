@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Shays\Logger;
 
+use Shays\Logger\Exceptions\LogLevelException;
+
 class LogLevel
 {
 	/** @var int Debug log level */
@@ -31,7 +33,7 @@ class LogLevel
 	const EMERGENCY = 800;
 
 	/** @var mixed[] Mapped log levels */
-	const LEVELS = [
+	public static $levels = [
 		self::DEBUG => 'DEBUG',
 		self::INFO => 'INFO',
 		self::NOTICE => 'NOTICE',
@@ -49,16 +51,7 @@ class LogLevel
 	 */
 	public static function getLogLevels(): array
 	{
-		return [
-			self::DEBUG,
-			self::INFO,
-			self::NOTICE,
-			self::WARNING,
-			self::ERROR,
-			self::CRITICAL,
-			self::ALERT,
-			self::EMERGENCY,
-		];
+		return self::$levels;
 	}
 
 	/**
@@ -69,6 +62,49 @@ class LogLevel
 	 */
 	public static function getLevelName(int $level): string
 	{
-		return self::LEVELS[$level];
+		return self::$levels[$level];
+	}
+
+	/**
+	 * Get a log level by its log level name
+	 *
+	 * @param string $levelName
+	 * @return int
+	 */
+	public static function getLevelByName(string $levelName): int
+	{
+		$logLevels = array_flip(self::getLogLevels());
+		return $logLevels[strtoupper($levelName)];
+	}
+
+	/**
+	 * Checks whether a log level already exists
+	 *
+	 * @param string $level
+	 * @return bool
+	 */
+	public static function hasLevelName(string $level): bool
+	{
+		return in_array(strtoupper($level), array_values(self::getLogLevels()), true);
+	}
+
+	/**
+	 * Add an additional log level if needed, which can be logged
+	 * and handled by custom handlers depending on requirements
+	 *
+	 * @param int $level Log level
+	 * @param string $name Level name
+	 * @throws LogLevelException
+	 */
+	public static function addLevel(int $level, string $name)
+	{
+		if (isset(self::$levels[$level])) {
+			throw new LogLevelException("Level $level already exists");
+		}
+
+		self::$levels[$level] = strtoupper($name);
+
+		// Sort the logs by level
+		ksort(self::$levels);
 	}
 }

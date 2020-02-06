@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Shays\Transformers;
+namespace Shays\Logger\Transformers;
 
 interface TransfomerInterface
 {

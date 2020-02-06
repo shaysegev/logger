@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Shays\Serializer;
+namespace Shays\Logger\Serializer;
 
-use Shays\Formatters\Format;
+use Shays\Logger\Formatters\Format;
 use Shays\Logger\LogInterface;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;

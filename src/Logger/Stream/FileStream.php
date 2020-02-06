@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Shays\Stream;
+namespace Shays\Logger\Stream;
 
 use Shays\Logger\LogInterface;
 use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
