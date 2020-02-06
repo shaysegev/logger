@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Tests;
 
 use Shays\Logger;
-use Shays\Logger\LogLevel;
 use PHPUnit\Framework\TestCase;
 
-final class LogTest extends TestCase
+final class LogContextTest extends TestCase
 {
 	public function testLoggingGlobalContext()
 	{
@@ -36,11 +35,11 @@ final class LogTest extends TestCase
 		$logger->info('info message', ['userType' => 'admin']);
 
 		$log = $logger->getLast();
-		$this->assertEquals($log->getContext('userId'), 3);
 		$this->assertEquals($log->hasContext('userId'), true);
+		$this->assertEquals($log->getContext('userId'), 3);
 
-		$this->assertEquals($log->getContext('userType'), 'admin');
 		$this->assertEquals($log->hasContext('userType'), true);
+		$this->assertEquals($log->getContext('userType'), 'admin');
 
 		$this->assertEquals($log->getAllContext(), [
 			'userId' => 3,
@@ -60,10 +59,5 @@ final class LogTest extends TestCase
 		$this->assertEquals($log->getAllContext(), [
 			'userId' => 3,
 		]);
-	}
-
-	public function testLoggingGlobalContextAndAppendingContext()
-	{
-
 	}
 }
