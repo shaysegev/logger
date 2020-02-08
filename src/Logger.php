@@ -7,9 +7,10 @@ namespace Shays;
 use DateTimeImmutable;
 use DateTimeZone;
 use Shays\Logger\Contracts\LoggerContract;
-use Shays\Logger\Exceptions\FormatException;
+use Shays\Logger\Exceptions\CustomLogException;
 use Shays\Logger\Exceptions\HandlerException;
 use Shays\Logger\Exceptions\InvalidDynamicInvocationException;
+use Shays\Logger\Exceptions\LogException;
 use Shays\Logger\Exceptions\LogLevelException;
 use Shays\Logger\Exceptions\StreamException;
 use Shays\Logger\Formatters\Format;
@@ -35,8 +36,8 @@ class Logger implements LoggerContract
 	/** @var SerializerInterface Log serializer  */
 	private $serializer;
 
-	/** @var LogInterface The log object */
-	private $log;
+	/** @var string A custom log class (used for customising the log data) */
+	private $customLog;
 
 	/** @var LogInterface[] Log entries stored in the request cycle */
 	private $logs = [];
@@ -55,14 +56,26 @@ class Logger implements LoggerContract
 	 *
 	 * @param string $channel Channel name of the logger instance
 	 * @param SerializerInterface|null $serializer A custom log serializer
-	 * @param LogInterface|null $log
+	 * @param string $customLogClass
+	 * @throws CustomLogException
 	 */
-	public function __construct(string $channel, ?SerializerInterface $serializer = null, ?LogInterface $log = null)
-	{
+	public function __construct(
+		string $channel,
+		?SerializerInterface $serializer = null,
+		?string $customLogClass = null
+	) {
 		$this->channel = $channel;
 		$this->serializer = $serializer ?? new Serializer(Format::JSON);
-		$this->log = $log ?? Log::class;
 		$this->timezone = new DateTimeZone(date_default_timezone_get());
+
+		// Do we have a custom log class?
+		if ($customLogClass) {
+			if (!is_subclass_of($customLogClass, LogInterface::class)) {
+				throw new CustomLogException('Custom log must inherit ' . Log::class);
+			}
+
+			$this->customLog = $customLogClass;
+		}
 
 		// Todo set a condition for these handlers
 		new ExceptionHandler($this);
@@ -142,27 +155,6 @@ class Logger implements LoggerContract
 	}
 
 	/**
-	 * Gets all the log levels
-	 *
-	 * @return mixed[]
-	 */
-	public function getLogLevels(): array
-	{
-		return LogLevel::getLogLevels();
-	}
-
-	/**
-	 * Gets the log level name of the level provided
-	 *
-	 * @param int $level
-	 * @return string
-	 */
-	protected function getLevelName(int $level): string
-	{
-		return LogLevel::getLevelName($level);
-	}
-
-	/**
 	 * Add a dynamic log level which could be called dynamically with the __call magic method.
 	 *
 	 * @param int $value Log level value
@@ -183,20 +175,31 @@ class Logger implements LoggerContract
 	 * @param int $level The log entry level (@see LogLevel)
 	 * @param string $message The log message
 	 * @param array $context Additional log related information
+	 * @throws LogException
 	 */
-	private function createLog(int $level, string $message, array $context = []): void
+	private function createLog(int $level, $message, array $context = []): void
 	{
+		// Check for message type here so we could control the type error message
+		if (gettype($message) !== 'string') {
+			throw new LogException('Log message must only contain a string');
+		}
+
 		if (! in_array($level, array_keys(LogLevel::getLogLevels()), true)) {
 			throw new LogLevelException("Invalid log level: $level");
 		}
 
+		$logData = [
+			'channel' => $this->channel,
+			'level' => $level,
+			'message' => $message,
+			'context' => array_merge(ContextExceptionTransformer::transform($context), $this->context),
+			'time' => new DateTimeImmutable('now', $this->timezone),
+		];
+
 		// Create a new log entry
-		$log = new $this->log(
-			$level,
-			$message,
-			array_merge(ContextExceptionTransformer::transform($context), $this->context),
-			new DateTimeImmutable('now', $this->timezone)
-		);
+		$log = $this->customLog
+			? new $this->customLog(...array_values($logData))
+			: new Log(...array_values($logData));
 
 		// Add it for the record
 		$this->logs[] = $log;
@@ -223,24 +226,9 @@ class Logger implements LoggerContract
 	}
 
 	/**
-	 * Get the last log entry
-	 *
-	 * @return LogInterface|null
-	 */
-	public function getLast(): ?LogInterface
-	{
-		$logs = $this->getLogs();
-		if (count($logs) >= 1) {
-			return end($logs);
-		}
-
-		return null;
-	}
-
-	/**
 	 * Gets all the log entries added
 	 *
-	 * @return mixed[]
+	 * @return LogInterface[]
 	 */
 	public function getLogs(): array
 	{
@@ -255,18 +243,21 @@ class Logger implements LoggerContract
 	 * be handled by all handlers and streamers.
 	 *
 	 * @see self::addLogLevel
-	 * @param $name
-	 * @param $args
+	 * @param string $name
+	 * @param mixed[]|null $args
+	 * @throws InvalidDynamicInvocationException
 	 */
-	public function __call($name, $args)
+	public function __call($name, $args): void
 	{
 		// Can we log a dynamic level?
 		if (LogLevel::hasLevelName($name)) {
+			// Fill up the context if wasn't added
+			$args[1] = $args[1] ?? [];
 			[$message, $context] = $args;
 			// Check if we get a message
 			if (gettype($message) === 'string' && strlen($message) > 0) {
 				// Let's handle the log!
-				$this->createLog(LogLevel::getLevelByName($name), $message, $context ?? []);
+				$this->log(LogLevel::getLevelByName($name), $message, $context);
 			}
 
 			return;

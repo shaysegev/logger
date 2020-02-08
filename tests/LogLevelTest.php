@@ -11,87 +11,87 @@ use PHPUnit\Framework\TestCase;
 
 final class LogLevelTest extends TestCase
 {
-	public function testLogDebug()
+	public function testLogDebug(): void
 	{
 		$logger = new Logger('test');
 		$logger->debug('debug message');
 
-		$this->assertEquals($logger->getLast()->getMessage(), 'debug message');
-		$this->assertEquals($logger->getLast()->getLevel(), 100);
-		$this->assertEquals($logger->getLast()->getLevelName(), 'DEBUG');
+		$this->assertEquals($logger->getLogs()[0]->getMessage(), 'debug message');
+		$this->assertEquals($logger->getLogs()[0]->getLevel(), 100);
+		$this->assertEquals($logger->getLogs()[0]->getLevelName(), 'DEBUG');
 	}
 
-	public function testLogInfo()
+	public function testLogInfo(): void
 	{
 		$logger = new Logger('test');
 		$logger->info('info message');
 
-		$this->assertEquals($logger->getLast()->getMessage(), 'info message');
-		$this->assertEquals($logger->getLast()->getLevel(), 200);
-		$this->assertEquals($logger->getLast()->getLevelName(), 'INFO');
+		$this->assertEquals($logger->getLogs()[0]->getMessage(), 'info message');
+		$this->assertEquals($logger->getLogs()[0]->getLevel(), 200);
+		$this->assertEquals($logger->getLogs()[0]->getLevelName(), 'INFO');
 	}
 
-	public function testLogNotice()
+	public function testLogNotice(): void
 	{
 		$logger = new Logger('test');
 		$logger->notice('notice message');
 
-		$this->assertEquals($logger->getLast()->getMessage(), 'notice message');
-		$this->assertEquals($logger->getLast()->getLevel(), 300);
-		$this->assertEquals($logger->getLast()->getLevelName(), 'NOTICE');
+		$this->assertEquals($logger->getLogs()[0]->getMessage(), 'notice message');
+		$this->assertEquals($logger->getLogs()[0]->getLevel(), 300);
+		$this->assertEquals($logger->getLogs()[0]->getLevelName(), 'NOTICE');
 	}
 
-	public function testLogWarning()
+	public function testLogWarning(): void
 	{
 		$logger = new Logger('test');
 		$logger->warning('warning message');
 
-		$this->assertEquals($logger->getLast()->getMessage(), 'warning message');
-		$this->assertEquals($logger->getLast()->getLevel(), 400);
-		$this->assertEquals($logger->getLast()->getLevelName(), 'WARNING');
+		$this->assertEquals($logger->getLogs()[0]->getMessage(), 'warning message');
+		$this->assertEquals($logger->getLogs()[0]->getLevel(), 400);
+		$this->assertEquals($logger->getLogs()[0]->getLevelName(), 'WARNING');
 	}
 
-	public function testLogError()
+	public function testLogError(): void
 	{
 		$logger = new Logger('test');
 		$logger->error('error message');
 
-		$this->assertEquals($logger->getLast()->getMessage(), 'error message');
-		$this->assertEquals($logger->getLast()->getLevel(), 500);
-		$this->assertEquals($logger->getLast()->getLevelName(), 'ERROR');
+		$this->assertEquals($logger->getLogs()[0]->getMessage(), 'error message');
+		$this->assertEquals($logger->getLogs()[0]->getLevel(), 500);
+		$this->assertEquals($logger->getLogs()[0]->getLevelName(), 'ERROR');
 	}
 
-	public function testLogCritical()
+	public function testLogCritical(): void
 	{
 		$logger = new Logger('test');
 		$logger->critical('critical message');
 
-		$this->assertEquals($logger->getLast()->getMessage(), 'critical message');
-		$this->assertEquals($logger->getLast()->getLevel(), 600);
-		$this->assertEquals($logger->getLast()->getLevelName(), 'CRITICAL');
+		$this->assertEquals($logger->getLogs()[0]->getMessage(), 'critical message');
+		$this->assertEquals($logger->getLogs()[0]->getLevel(), 600);
+		$this->assertEquals($logger->getLogs()[0]->getLevelName(), 'CRITICAL');
 	}
 
-	public function testLogAlert()
+	public function testLogAlert(): void
 	{
 		$logger = new Logger('test');
 		$logger->alert('alert message');
 
-		$this->assertEquals($logger->getLast()->getMessage(), 'alert message');
-		$this->assertEquals($logger->getLast()->getLevel(), 700);
-		$this->assertEquals($logger->getLast()->getLevelName(), 'ALERT');
+		$this->assertEquals($logger->getLogs()[0]->getMessage(), 'alert message');
+		$this->assertEquals($logger->getLogs()[0]->getLevel(), 700);
+		$this->assertEquals($logger->getLogs()[0]->getLevelName(), 'ALERT');
 	}
 
-	public function testLogEmergency()
+	public function testLogEmergency(): void
 	{
 		$logger = new Logger('test');
 		$logger->emergency('emergency message');
 
-		$this->assertEquals($logger->getLast()->getMessage(), 'emergency message');
-		$this->assertEquals($logger->getLast()->getLevel(), 800);
-		$this->assertEquals($logger->getLast()->getLevelName(), 'EMERGENCY');
+		$this->assertEquals($logger->getLogs()[0]->getMessage(), 'emergency message');
+		$this->assertEquals($logger->getLogs()[0]->getLevel(), 800);
+		$this->assertEquals($logger->getLogs()[0]->getLevelName(), 'EMERGENCY');
 	}
 
-	public function testLogUnknownLevel()
+	public function testLogUnknownLevel(): void
 	{
 		$this->expectException(LogLevelException::class);
 		$this->expectExceptionMessage('Invalid log level: 350');
@@ -100,17 +100,27 @@ final class LogLevelTest extends TestCase
 		$logger->log(350, 'unknown level message');
 	}
 
-	public function testAddNewLogLevel()
+	public function testAddNewLogLevel(): void
 	{
-		$logger = (new Logger('test'))->addLogLevel(50, 'progress');
+		$logger = new Logger('test');
+		$logger->addLogLevel(50, 'progress');
 		$logger->progress('Progress message');
 
-		$this->assertEquals($logger->getLast()->getMessage(), 'Progress message');
-		$this->assertEquals($logger->getLast()->getLevel(), 50);
-		$this->assertEquals($logger->getLast()->getLevelName(), 'PROGRESS');
+		$this->assertEquals($logger->getLogs()[0]->getMessage(), 'Progress message');
+		$this->assertEquals($logger->getLogs()[0]->getLevel(), 50);
+		$this->assertEquals($logger->getLogs()[0]->getLevelName(), 'PROGRESS');
 	}
 
-	public function testCallAnUnknownLogLevel()
+	public function testAddNewLogLevelThatAlreadyExists(): void
+	{
+		$this->expectException(LogLevelException::class);
+		$this->expectExceptionMessage('Log level 200 already exists. Level: INFO');
+
+		$logger = new Logger('test');
+		$logger->addLogLevel(200, 'progress');
+	}
+
+	public function testCallAnUnknownLogLevel(): void
 	{
 		$this->expectException(InvalidDynamicInvocationException::class);
 		$logger = new Logger('test');

@@ -15,10 +15,10 @@ interface LogInterface
 	public function getLevel(): int;
 
 	/**
-	 * Serialize the log data, which would be used by the streamers to store the serialized data
-	 * this provides flexibility to reduce to log size and exclude potentially log entries included big data
+	 * Transform the log data to an array, which would be used by the streamers to easily store the data.
+	 * This can provide flexibility to reduce the log size and exclude log entries included big data.
 	 *
 	 * @return mixed[]
 	 */
-	public function serialize(): array;
+	public function toArray(): array;
 }

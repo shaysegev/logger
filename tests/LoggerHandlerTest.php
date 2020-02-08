@@ -12,13 +12,13 @@ use PHPUnit\Framework\TestCase;
 
 final class LoggerHandlerTest extends TestCase
 {
-	public function testLoggerWithCustomHandler()
+	public function testLoggerWithCustomHandler(): void
 	{
 		$callableErrorHandler = $this->getMockBuilder(CustomErrorHandlerMock::class)
 			->setMethods(['__invoke', 'handle', 'shouldHandle'])
 			->getMock();
 
-		$log = new Log(LogLevel::ERROR, 'Error message', [], new \DateTimeImmutable());
+		$log = new Log('test', LogLevel::ERROR, 'Error message', [], new \DateTimeImmutable());
 
 		$callableErrorHandler->expects($this->once())
 			->method('shouldHandle')
@@ -33,13 +33,14 @@ final class LoggerHandlerTest extends TestCase
 		$logger->error('Error message');
 	}
 
-	public function testLoggerWithCustomHandlerWithContext()
+	public function testLoggerWithCustomHandlerWithContext(): void
 	{
 		$callableErrorHandler = $this->getMockBuilder(CustomErrorHandlerMock::class)
 			->setMethods(['__invoke', 'handle', 'shouldHandle'])
 			->getMock();
 
 		$log = new Log(
+			'test',
 			LogLevel::ERROR,
 			'Error message',
 			['environment' => 'test'],
@@ -59,13 +60,13 @@ final class LoggerHandlerTest extends TestCase
 		$logger->error('Error message', ['environment' => 'test']);
 	}
 
-	public function testLoggerWithAnIgnoredCustomHandler()
+	public function testLoggerWithAnIgnoredCustomHandler(): void
 	{
 		$callableErrorHandler = $this->getMockBuilder(CustomErrorHandlerMock::class)
 			->setMethods(['__invoke', 'handle', 'shouldHandle'])
 			->getMock();
 
-		$log = new Log(LogLevel::WARNING, 'Warning message', [], new \DateTimeImmutable());
+		$log = new Log('test', LogLevel::WARNING, 'Warning message', [], new \DateTimeImmutable());
 
 		$callableErrorHandler->expects($this->once())
 			->method('shouldHandle')

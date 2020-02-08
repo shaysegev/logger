@@ -59,9 +59,14 @@ class LogLevel
 	 *
 	 * @param int $level
 	 * @return string
+	 * @throws LogLevelException
 	 */
 	public static function getLevelName(int $level): string
 	{
+		if (!isset(self::$levels[$level])) {
+			throw new LogLevelException("Log level with level $level was not found");
+		}
+
 		return self::$levels[$level];
 	}
 
@@ -70,11 +75,18 @@ class LogLevel
 	 *
 	 * @param string $levelName
 	 * @return int
+	 * @throws LogLevelException
 	 */
 	public static function getLevelByName(string $levelName): int
 	{
 		$logLevels = array_flip(self::getLogLevels());
-		return $logLevels[strtoupper($levelName)];
+		$logName = $logLevels[strtoupper($levelName)];
+
+		if (!$logName) {
+			throw new LogLevelException("Log level with name $levelName was not found");
+		}
+
+		return $logName;
 	}
 
 	/**
@@ -96,10 +108,10 @@ class LogLevel
 	 * @param string $name Level name
 	 * @throws LogLevelException
 	 */
-	public static function addLevel(int $level, string $name)
+	public static function addLevel(int $level, string $name): void
 	{
 		if (isset(self::$levels[$level])) {
-			throw new LogLevelException("Level $level already exists");
+			throw new LogLevelException("Log level $level already exists. Level: " . self::$levels[$level]);
 		}
 
 		self::$levels[$level] = strtoupper($name);

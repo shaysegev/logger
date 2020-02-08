@@ -8,38 +8,47 @@ use DateTimeImmutable;
 
 class Log implements LogInterface
 {
+	/** @var string Log channel */
+	protected $channel;
+
 	/** @var int Log level */
-	private $level;
+	protected $level;
 
 	/** @var string Log level name */
-	private $levelName;
+	protected $levelName;
 
-	/** @var int Log message */
-	private $message;
+	/** @var string Log message */
+	protected $message;
 
-	/** @var int Additional related information */
-	private $context = [];
+	/** @var mixed[] Additional related information */
+	protected $context;
 
 	/** @var string Timestamp when the log was created */
-	private $timestamp;
+	protected $timestamp;
 
 	/**
 	 * Log constructor.
 	 *
+	 * @param string $channel Log channel
 	 * @param int $level Log level
 	 * @param string $message Log message
 	 * @param mixed[] $context Log context
 	 * @param DateTimeImmutable $time DateTime
 	 */
-	public function __construct(int $level, string $message, array $context, DateTimeImmutable $time)
-	{
+	final public function __construct(
+		string $channel,
+		int $level,
+		string $message,
+		array $context,
+		DateTimeImmutable $time
+	) {
+		$this->channel = $channel;
 		$this->level = $level;
 		$this->levelName = LogLevel::getLevelName($level);
 		$this->message = $message;
-		$this->context = $context;
+		$this->context = $context ?? [];
 
 		// TODO: Move this into a separate class
-		$time->setTimestamp(time());
 		$this->timestamp = $time->format('Y-m-d H:i:s');
 	}
 
@@ -51,6 +60,16 @@ class Log implements LogInterface
 	public function getMessage(): string
 	{
 		return $this->message;
+	}
+
+	/**
+	 * Gets the log channel
+	 *
+	 * @return string
+	 */
+	public function getChannel(): string
+	{
+		return $this->channel;
 	}
 
 	/**
@@ -122,7 +141,7 @@ class Log implements LogInterface
 	/**
 	 * Gets a dynamic field from the log (looks at the context by default)
 	 *
-	 * @param $field
+	 * @param string $field
 	 * @return mixed
 	 */
 	public function get(string $field)
@@ -140,9 +159,10 @@ class Log implements LogInterface
 	/**
 	 * {@inheritDoc}
 	 */
-	public function serialize(): array
+	public function toArray(): array
 	{
 		return [
+			'channel' => $this->getChannel(),
 			'message' => $this->getMessage(),
 			'level' => $this->getLevel(),
 			'levelName' => $this->getLevelName(),

@@ -15,13 +15,13 @@ use Tests\Mocks\XmlEncoderMock;
 
 final class LoggerStreamTest extends TestCase
 {
-	public function testLoggerWithCustomStream()
+	public function testLoggerWithCustomStream(): void
 	{
 		$callableDatabaseStreamer = $this->getMockBuilder(DatabaseStreamMock::class)
 			->setMethods(['__invoke', 'write', 'shouldWrite'])
 			->getMock();
 
-		$log = new Log(LogLevel::ERROR, 'Error message', [], new \DateTimeImmutable());
+		$log = new Log('test', LogLevel::ERROR, 'Error message', [], new \DateTimeImmutable());
 		$serializer = new Serializer(Format::JSON);
 
 		$callableDatabaseStreamer->expects($this->once())
@@ -37,13 +37,13 @@ final class LoggerStreamTest extends TestCase
 		$logger->error('Error message');
 	}
 
-	public function testLoggerWithCustomStreamAndSerializer()
+	public function testLoggerWithCustomStreamAndSerializer(): void
 	{
 		$callableDatabaseStreamer = $this->getMockBuilder(DatabaseStreamMock::class)
 			->setMethods(['__invoke', 'write', 'shouldWrite'])
 			->getMock();
 
-		$log = new Log(LogLevel::ERROR, 'Error message', [], new \DateTimeImmutable());
+		$log = new Log('test', LogLevel::ERROR, 'Error message', [], new \DateTimeImmutable());
 		$serializer = new Serializer(Format::JSON);
 
 		$callableDatabaseStreamer->expects($this->once())
@@ -59,13 +59,13 @@ final class LoggerStreamTest extends TestCase
 		$logger->error('Error message');
 	}
 
-	public function testLoggerWithCustomStreamAndCustomSerializer()
+	public function testLoggerWithCustomStreamAndCustomSerializer(): void
 	{
 		$callableDatabaseStreamer = $this->getMockBuilder(DatabaseStreamMock::class)
 			->setMethods(['__invoke', 'write', 'shouldWrite'])
 			->getMock();
 
-		$log = new Log(LogLevel::ERROR, 'Error message', [], new \DateTimeImmutable());
+		$log = new Log('test', LogLevel::ERROR, 'Error message', [], new \DateTimeImmutable());
 
 		$encoder = new XmlEncoderMock();
 

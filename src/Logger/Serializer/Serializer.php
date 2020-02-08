@@ -38,6 +38,6 @@ class Serializer implements SerializerInterface
 	 */
 	public function serialize(LogInterface $log)
 	{
-		return $this->serializer->serialize($log->serialize(), $this->format);
+		return $this->serializer->serialize($log->toArray(), $this->format);
 	}
 }
