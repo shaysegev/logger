@@ -1,0 +1,12 @@
+includes:
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+parameters:
+    level: 7
+    checkMissingIterableValueType: false
+    ignoreErrors:
+        # Ignore errors related to LogInterface (add to interface?)
+        - "#Call to an undefined method (.*)(hasContext|getContext|getAllContext|get|getMessage|getLevelName)()#"
+    paths:
+        - src
+        - tests
