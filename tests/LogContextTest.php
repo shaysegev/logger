@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 final class LogContextTest extends TestCase
 {
-	public function testLoggingGlobalContext()
+	public function testLoggingGlobalContext(): void
 	{
 		$logger = new Logger('test');
 		$logger->addContext([
@@ -18,14 +18,14 @@ final class LogContextTest extends TestCase
 
 		$logger->info('info message');
 
-		$log = $logger->getLast();
+		$log = $logger->getLogs()[0];
 		$this->assertEquals($log->hasContext('userId'), true);
 		$this->assertEquals($log->getContext('userId'), 3);
 		$this->assertEquals($log->get('userId'), 3);
 		$this->assertEquals($log->getAllContext()['userId'], 3);
 	}
 
-	public function testLoggingGlobalContextAndLogContext()
+	public function testLoggingGlobalContextAndLogContext(): void
 	{
 		$logger = new Logger('test');
 		$logger->addContext([
@@ -34,7 +34,7 @@ final class LogContextTest extends TestCase
 
 		$logger->info('info message', ['userType' => 'admin']);
 
-		$log = $logger->getLast();
+		$log = $logger->getLogs()[0];
 		$this->assertEquals($log->hasContext('userId'), true);
 		$this->assertEquals($log->getContext('userId'), 3);
 
@@ -49,7 +49,7 @@ final class LogContextTest extends TestCase
 		// append some data and make sure only global context remains
 		$logger->info('info message');
 
-		$log = $logger->getLast();
+		$log = $logger->getLogs()[1];
 		$this->assertEquals($log->hasContext('userId'), true);
 		$this->assertEquals($log->getContext('userId'), 3);
 

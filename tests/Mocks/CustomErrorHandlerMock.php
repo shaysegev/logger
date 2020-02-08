@@ -9,8 +9,6 @@ use Shays\Logger\LogInterface;
 
 class CustomErrorHandlerMock implements LogHandlerInterface
 {
-	public $handler;
-
 	public function shouldHandle(LogInterface $log): bool
 	{
 		// is mocked

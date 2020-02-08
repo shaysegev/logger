@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 final class LoggerTimezoneTest extends TestCase
 {
-	public function testLoggerWithDefaultTimezone()
+	public function testLoggerWithDefaultTimezone(): void
 	{
 		$logger = new Logger('test');
 		$this->assertEquals(
@@ -18,16 +18,17 @@ final class LoggerTimezoneTest extends TestCase
 		);
 	}
 
-	public function testLoggerWithValidTimezone()
+	public function testLoggerWithValidTimezone(): void
 	{
-		$logger = (new Logger('test'))->setTimezone(new \DateTimeZone('Europe/London'));
+		$logger = new Logger('test');
+		$logger->setTimezone(new \DateTimeZone('Europe/London'));
 		$this->assertEquals(
 			$logger->getTimezone()->getName(),
 			'Europe/London'
 		);
 	}
 
-	public function testLoggerWithInvalidTimezone()
+	public function testLoggerWithInvalidTimezone(): void
 	{
 		$this->expectException(\Throwable::class);
 		(new Logger('test'))->setTimezone(new \DateTimeZone('Europe/Londoa'));
