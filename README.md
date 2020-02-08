@@ -1,6 +1,6 @@
-# Logger library (Not another one!)
+# Logger library
 
-This is an MVP for a simpler yet efficient logging library. 
+This is an MVP for a simpler yet efficient logging library.
 
 Following the [PSR-3 Logging standard](https://www.php-fig.org/psr/psr-3/) and inspired by [Monolog](https://github.com/Seldaek/monolog), the library comes with a handy functionality to get you started, though it's extremely unopinionated (if you want it to be), and is adjustable to suit various technical needs.
 
@@ -30,7 +30,7 @@ $log = (new Logger('MyApp'))->addStream(new FileStream('application.log'));
 $log->notice('Log message');
 ```
 
-And that's it. In the example we've created a logger instance with the application's name, that stores any PHP notices/warnings/errors and exceptions occurring in the application to the path of your choice, in a JSON format which includes the error message, the log severity, and a timestamp. Any exceptions would also be added in details.
+And that's it. In the example we've created a `logger` instance with the application's name, that stores any PHP notices/warnings/errors and exceptions occurring in the application to the path of your choice, in a JSON format which includes the error message, the log severity, and a timestamp. Any exceptions would also be added in details.
 
 ### Timezones
 
@@ -65,7 +65,7 @@ $log = (new Logger('MyApp'))
 $log->notice('Log message');
 ```
 
-The context added on the logger instance level would be added to each individual log entry.
+The context added on the `logger` instance level would be added to each individual log entry.
 
 #### Adding Context To Logs
 
@@ -108,11 +108,13 @@ $log->notice('Log message');
 
 ## Advanced Usages
 
-The logger library comes with powerful extended abilities. Pretty much everything is allowed to be customised, you can even create your own `Log` object which is used by the handlers and log streams, and rename the fields and serialize the data the way you wish to, as long as you follow [its interface](src/Logger/LogInterface.php) (Examples below).
+The logger library comes with powerful extended abilities. Pretty much everything is allowed to be customised, you can even create your own `Log` object which is used by the handlers and log streams, and rename the fields and serialize the data the way you wish to.
+
+Let's start with some basic examples.
 
 ### Custom Log Levels
 
-It's possible to add custom log levels dynamically via the `addLogLevel` method, which takes the log level number and the name.
+It's possible to add custom log levels dynamically via the `addLogLevel` method, which takes the log level number and the name (which will be used to invoke it from the `logger` instance).
 
 It's recommended creating a new class for the custom levels, which can then be passed around the app when needed:
 
@@ -120,13 +122,14 @@ It's recommended creating a new class for the custom levels, which can then be p
 // CustomLogLevel.php
 
 class CustomLogLevel {
-    /** @var int New progress level (e.g. for logging cron tasks performances) */
+    /** @var int New progress log level (e.g. for logging cron task requests) */
 	const PROGRESS = 50;
 }
  ```
 
+And in the app:
  ```php
- use CustomLogLevel;;
+ use CustomLogLevel;
  use Shays\Logger;
  use Shays\Logger\Stream\FileStream;
  
@@ -140,7 +143,7 @@ $log->progress('Log message');
 
 ### Custom Handlers
 
-You can add your custom handlers to the logger instance, which would be called whenever a log is created. The custom handlers should all follow the [LogHandlerInterface](src/Logger/Handlers/LogHandlerInterface.php) which is consisted of two methods, `handle` and `shouldHandle`.
+You can add your custom handlers to the `logger` instance, which would be called whenever a log is created. The custom handlers should follow the [LogHandlerInterface](src/Logger/Handlers/LogHandlerInterface.php) which is consisted of two methods, `handle` and `shouldHandle`.
 
  ```php
 // MyCustomHandler.php
@@ -155,6 +158,7 @@ class MyCustomHandler implements LogHandlerInterface
     {
         // Do anything with the log object 
         // (e.g. get the message, context, etc)
+        // (read more about the Log object below)
     }
 
     public function shouldHandle(LogInterface $log): bool
@@ -178,7 +182,7 @@ Using the custom handlers you can send messages to Slack or use any third party 
 
 ### Custom Streamers
 
-Custom streamers are similar to custom handlers, only they are intended for streaming of serialized log data. The custom streamers should follow the [StreamInterface](src/Logger/Stream/StreamInterface.php), which is consisted of two methods: `write` and `shouldWrite`.
+Custom streamers are similar to custom handlers, only they are intended for streaming and saving serialized logs. The custom streamers should follow the [StreamInterface](src/Logger/Stream/StreamInterface.php), which is consisted of two methods: `write` and `shouldWrite`.
 
 In the examples above, we've used the library's `FileStream` class to store logs to a particular file, though we can use our own Stream class to create our unique functionality:
 
@@ -336,28 +340,27 @@ The custom log object provides additional flexibility over the data being passed
 
 When the log is passed to serializers (e.g. to write the log to a JSON file), before the data is serialized a `$log->toArray()` method is called to determine the data we're interested in passing through.
 
-While the default provides the basic structure and would be enough for most cases, extending it can include creating the desired data structure that will eventually be stored in the exact same structure. This works extremely well for global context that is always going to be there. For example:
+While the default provides the basic structure and would be enough for most cases, extending it helps us creating the desired data structure which will eventually be stored in the exact same way. This works extremely well for important global context being passed down as it's always going to be included. For example:
 
 ```php
 // CustomLog.php
 use Shays\Logger\Log;
 
 class CustomLog extends Log {
-	public function toArray(): array
-	{
+    public function toArray(): array
+    {
         $context = $this->getAllContext();
         // Remove environment from context (which will be used on the top array level)
         unset($context['environment']);
-   		return [
-			'timestamp' => $this->getTimestamp(),
-			'level' => $this->getLevel(),
-			'message' => $this->getMessage(),
-			'levelName' => $this->getLevelName(),
-			'environment' => $this->getContext('environment'),
+        return [
+            'timestamp' => $this->getTimestamp(),
+            'level' => $this->getLevel(),
+            'message' => $this->getMessage(),
+            'levelName' => $this->getLevelName(),
+            'environment' => $this->getContext('environment'),
             'additionalData' => $context,
-			...
-		];
-	}
+        ];
+    }
 }
 ```
 And we can now pass the new object in the app:
