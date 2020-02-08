@@ -1,6 +1,6 @@
 # Logger library (Not another one!)
 
-Not to worry, this is an MVP for a simple yet efficient logging library. 
+This is an MVP for a simpler yet efficient logging library. 
 
 Following the [PSR-3 Logging standard](https://www.php-fig.org/psr/psr-3/) and inspired by [Monolog](https://github.com/Seldaek/monolog), the library comes with a handy functionality to get you started, though it's extremely unopinionated (if you want it to be), and is adjustable to suit various technical needs.
 
@@ -114,19 +114,29 @@ The logger library comes with powerful extended abilities. Pretty much everythin
 
 It's possible to add custom log levels dynamically via the `addLogLevel` method, which takes the log level number and the name.
 
+It's recommended creating a new class for the custom levels, which can then be passed around the app when needed:
+
  ```php
+// CustomLogLevel.php
+
+class CustomLogLevel {
+    /** @var int New progress level (e.g. for logging cron tasks performances) */
+	const PROGRESS = 50;
+}
+ ```
+
+ ```php
+ use CustomLogLevel;;
  use Shays\Logger;
  use Shays\Logger\Stream\FileStream;
  
  $log = (new Logger('MyApp'))
-     ->addStream(new FileStream('application.log'))
-     ->addLogLevel(50, 'PROGRESS');
+     ->addStream(new FileStream('application.log', CustomLogLevel::PROGRESS))
+     ->addLogLevel(CustomLogLevel::PROGRESS, 'PROGRESS');
 
 // This is now possible to call it directly 
 $log->progress('Log message');
  ```
-
-*TODO: There's a gotcha with passing the least severe level to the file stream in this case, and it has to be reworked.*
 
 ### Custom Handlers
 
@@ -157,10 +167,11 @@ class MyCustomHandler implements LogHandlerInterface
 
 And in the app:
 ```php
- use Shays\Logger;
+use MyCustomHandler;
+use Shays\Logger;
  
- $log = (new Logger('MyApp'))
-     ->addHandler(new MyCustomHandler());
+$log = (new Logger('MyApp'))
+    ->addHandler(new MyCustomHandler());
 ```
 
 Using the custom handlers you can send messages to Slack or use any third party integrations that helps monitoring the health of your application.
@@ -172,12 +183,12 @@ Custom streamers are similar to custom handlers, only they are intended for stre
 In the examples above, we've used the library's `FileStream` class to store logs to a particular file, though we can use our own Stream class to create our unique functionality:
 
  ```php
-// DatabaseStreamer.php
+// XmlStream.php
 
 use Shays\Logger\LogInterface;
 use Shays\Logger\Stream\StreamInterface;
 
-class DatabaseStream implements StreamInterface
+class XmlStream implements StreamInterface
 {
 	/** @var int Lowest log level for handling log */
 	private $lowestLevel;
@@ -201,11 +212,11 @@ class DatabaseStream implements StreamInterface
 
 And in the app:
 ```
-use DatabaseStream;
 use Shays\Logger;
+use XmlStream;
  
  $log = (new Logger('MyApp'))
-     ->addStream(new DatabaseStream(LogLevel::ERROR));
+     ->addStream(new XmlStream(LogLevel::ERROR));
  ```
 
 #### Streaming Serializers
@@ -217,16 +228,25 @@ By default the log is being serialized to JSON when passed to the `write` method
 
 use Shays\Logger\LogInterface;
 use Shays\Logger\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Encoder\XmlEncoder;
 
 class XmlSerializer implements SerializerInterface
 {
+    private $encoder;
+
+    public function __construct() {
+        $this->encoder = new XmlEncoder();
+    }
+
     public function serialize(LogInterface $log)
     {
         // Serialize the data to XML format which would
         // be then passed to the streaming classes.
 
-        // you can use $log->serialize() method to serialize the
-        // log to an array with all the relevant log information
+        // The $log->toArray() method is transforming the
+        // log object to an array with the relevant
+        // log information, ready to be serialized
+        return $this->encoder->encode($log->toArray(), 'xml');
     }
 }
 ```
@@ -234,16 +254,124 @@ class XmlSerializer implements SerializerInterface
 And in the app:
 ```php
 use XmlSerializer;
+use XmlStream;
 use Shays\Logger;
  
  $log = (new Logger('MyApp', new XmlSerializer()))
-     ->addStream(new DatabaseStream(LogLevel::ERROR));
+     ->addStream(new XmlStream(LogLevel::ERROR));
 ```
 
 And all the custom streamers would now be handled with XML.
 
-### Custom Log Object
+### The Log Object
 
-The custom log object provides maximum flexibility over the data being passed down to the handlers and streamers. By default the library's [Log object](src/Logger/Log.php) has the most minimal and sensible data that makes each log a useful entry, though you can create your own log object and have full control over the the data being logged.
+[The library's log object](src/Logger/Log.php) provides a few handy methods for getting the data stored in each individual log.
 
-TODO example 
+Considering the custom handler example earlier:
+
+```php
+class MyCustomHandler implements LogHandlerInterface
+{
+    public function handle(LogInterface $log): void
+    {
+        // Handle log
+    }
+}
+```
+
+You can now use the log object to access its data, such as the log message:
+```php
+$log->getMessage();
+```
+
+The log channel:
+```php
+$log->getChannel();
+```
+
+The log level:
+```php
+$log->getLevel();
+```
+
+The log level name (e.g. warning, error, etc):
+```php
+$log->getLevelName();
+```
+
+The log timestamp:
+```php
+$log->getTimestamp();
+```
+
+You can also get the context array:
+```php
+$log->getAllContext();
+```
+
+Or just a single context:
+```php
+// Check if exists
+$log->hasContext('userId');
+
+// Get the context
+$log->getContext('userId');
+```
+
+You can also use the dynamic shorthand `get` method:
+```php
+// Gets the log message
+$log->get('message');
+
+// Gets the log level
+$log->get('level');
+
+// Gets the userId context (fallback to context)
+$log->get('userId');
+```
+
+#### Customising the Log Object
+
+The custom log object provides additional flexibility over the data being passed down to the handlers and streamers. By default the library's [Log object](src/Logger/Log.php) has the most minimal and sensible data you can expect from each log entry, though there's no control over the structure (e.g. whatever goes in context stays in context!)
+
+When the log is passed to serializers (e.g. to write the log to a JSON file), before the data is serialized a `$log->toArray()` method is called to determine the data we're interested in passing through.
+
+While the default provides the basic structure and would be enough for most cases, extending it can include creating the desired data structure that will eventually be stored in the exact same structure. This works extremely well for global context that is always going to be there. For example:
+
+```php
+// CustomLog.php
+use Shays\Logger\Log;
+
+class CustomLog extends Log {
+	public function toArray(): array
+	{
+        $context = $this->getAllContext();
+        // Remove environment from context (which will be used on the top array level)
+        unset($context['environment']);
+   		return [
+			'timestamp' => $this->getTimestamp(),
+			'level' => $this->getLevel(),
+			'message' => $this->getMessage(),
+			'levelName' => $this->getLevelName(),
+			'environment' => $this->getContext('environment'),
+            'additionalData' => $context,
+			...
+		];
+	}
+}
+```
+And we can now pass the new object in the app:
+```php
+use CustomLog;
+use Shays\Logger;
+use Shays\Logger\Stream\FileStream;
+ 
+ $log = (new Logger('MyApp', null, CustomLog::class))
+    ->addStream(new FileStream('application.log'))
+    ->addContext([
+        'environment' => 'debug',
+        'ipAddress' => '127.0.0.1',
+    ]);
+
+$log->info('Info message');
+```
