@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Shays\Logger\Stream;
 
 use Shays\Logger\LogInterface;
+use Shays\Logger\LogLevel;
 use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -29,7 +30,7 @@ class FileStream implements StreamInterface
 	 * @param int $lowestLevel Lowest log level to be handled
 	 * @throws \Exception
 	 */
-	public function __construct(string $path, int $lowestLevel = 200)
+	public function __construct(string $path, int $lowestLevel = LogLevel::INFO)
 	{
 		$this->path = $path;
 
@@ -59,7 +60,7 @@ class FileStream implements StreamInterface
 		if (! $this->isEmpty) {
 			// Is JSON? // TODO: improve, this is ugly
 			if (is_object(json_decode($log))) {
-				$this->file->appendToFile($this->path, ',');
+				$this->file->appendToFile($this->path, ",\n");
 			}
 		}
 
