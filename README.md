@@ -215,7 +215,7 @@ class XmlStream implements StreamInterface
 ```
 
 And in the app:
-```
+```php
 use Shays\Logger;
 use XmlStream;
  
@@ -238,7 +238,8 @@ class XmlSerializer implements SerializerInterface
 {
     private $encoder;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->encoder = new XmlEncoder();
     }
 
@@ -336,7 +337,7 @@ $log->get('userId');
 
 #### Customising the Log Object
 
-The custom log object provides additional flexibility over the data being passed down to the handlers and streamers. By default the library's [Log object](src/Logger/Log.php) has the most minimal and sensible data you can expect from each log entry, though there's no control over the structure (e.g. whatever goes in context stays in context!)
+The custom log object provides additional flexibility over the data being passed down to the handlers and streamers. By default the library's [Log object](src/Logger/Log.php) covers the most minimal data you can expect from each log entry, though there's no control over the structure (e.g. what goes in context stays in context!)
 
 When the log is passed to serializers (e.g. to write the log to a JSON file), before the data is serialized a `$log->toArray()` method is called to determine the data we're interested in passing through.
 
@@ -346,7 +347,8 @@ While the default provides the basic structure and would be enough for most case
 // CustomLog.php
 use Shays\Logger\Log;
 
-class CustomLog extends Log {
+class CustomLog extends Log
+{
     public function toArray(): array
     {
         $context = $this->getAllContext();
